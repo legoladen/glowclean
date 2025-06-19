@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GlowClean</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #87CEEB; /* Небесно-голубой фон */
+            overflow: hidden;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            color: #333;
+            user-select: none; /* Отключаем выделение текста */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: manipulation; /* Улучшает реакцию на касания */
+        }
+
+        #game-container {
+            width: 90vmin;
+            height: 90vmin;
+            max-width: 600px;
+            max-height: 600px;
+            background-color: #F0F8FF; /* Светло-голубой фон для контейнера */
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            border: 8px solid #ADD8E6; /* Светло-синяя рамка */
+        }
+
+        #start-screen, #game-screen, #end-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        #game-screen {
+            justify-content: flex-start;
+            padding-top: 20px;
+        }
+
+        h1 {
+            color: #4682B4; /* Стальной синий */
+            font-size: clamp(1.5em, 5vmin, 3em);
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: clamp(1em, 4vmin, 2em);
+            background-color: #5F9EA0; /* Кадетский синий */
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        button:hover {
+            background-color: #4682B4;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        #timer {
+            font-size: clamp(1.2em, 4vmin, 2.5em);
+            margin-bottom: 10px;
+            color: #4682B4;
+            font-weight: bold;
+        }
+
+        #instruction {
+            font-size: clamp(0.9em, 3vmin, 1.8em);
+            margin-bottom: 20px;
+            min-height: 2em; /* Чтобы текст не "прыгал" */
+            color: #5F9EA0;
+        }
+
+        #dish-container {
+            width: 80%;
+            height: 80%;
+            max-width: 400px;
+            max-height: 400px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #dish {
+            width: 100%;
+            height: 100%;
+            background-color: #E0FFFF; /* Светлый циан */
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.1);
+            border: 5px solid #B0E0E6; /* Пороховой голубой */
+            transition: transform 0.05s ease-out; /* Плавное вращение */
+        }
+
+        .food-stain {
+            position: absolute;
+            background-color: #A0522D; /* Сиена */
+            border-radius: 50%;
+            opacity: 0.9;
+            pointer-events: none;
+        }
+
+        .foam {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            opacity: 0.7;
+            pointer-events: none;
+            filter: blur(5px);
+            animation: bubble 0.5s ease-in-out forwards;
+        }
+
+        @keyframes bubble {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 0.7; }
+        }
+
+        #capsule-container {
+            width: 80%;
+            max-width: 300px;
+            height: 40px;
+            background-color: #D3D3D3; /* Светло-серый */
+            border-radius: 20px;
+            border: 2px solid #A9A9A9; /* Тёмно-серый */
+            overflow: hidden;
+            margin-top: 30px;
+            position: relative;
+        }
+
+        #capsule-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #6A5ACD; /* Темно-сланцевый синий */
+            border-radius: 20px;
+            transition: width 0.1s linear;
+        }
+
+        #star-container {
+            margin-top: 20px;
+        }
+
+        .star {
+            width: 50px;
+            height: 50px;
+            background-color: #FFD700; /* Золотой */
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            display: inline-block;
+            margin: 0 5px;
+            opacity: 0.3; /* Изначально тусклые */
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .star.filled {
+            opacity: 1; /* Яркие, если получены */
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="start-screen">
+            <h1>GlowClean</h1>
+            <p style="font-size: clamp(0.8em, 2.5vmin, 1.5em); margin-bottom: 30px;">Помойте тарелку до блеска!</p>
+            <button id="start-button">Начать игру</button>
+        </div>
+
+        <div id="game-screen" class="hidden">
+            <div id="timer">Время: 0с</div>
+            <div id="instruction"></div>
+            <div id="dish-container">
+                <div id="dish"></div>
+            </div>
+            <div id="capsule-container" class="hidden">
+                <div id="capsule-fill"></div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="hidden">
+            <h1>Посуда чистая!</h1>
+            <p id="final-time" style="font-size: clamp(1em, 3.5vmin, 2em); margin-bottom: 20px;"></p>
+            <div id="star-container">
+                <div class="star" id="star1"></div>
+                <div class="star" id="star2"></div>
+                <div class="star" id="star3"></div>
+            </div>
+            <button id="restart-button" style="margin-top: 30px;">Сыграть ещё раз</button>
+        </div>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const endScreen = document.getElementById('end-screen');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const timerDisplay = document.getElementById('timer');
+        const instructionDisplay = document.getElementById('instruction');
+        const dish = document.getElementById('dish');
+        const dishContainer = document.getElementById('dish-container');
+        const capsuleContainer = document.getElementById('capsule-container');
+        const capsuleFill = document.getElementById('capsule-fill');
+        const finalTimeDisplay = document.getElementById('final-time');
+        const stars = [document.getElementById('star1'), document.getElementById('star2'), document.getElementById('star3')];
+
+        let gameStarted = false;
+        let startTime;
+        let gameInterval;
+        let currentStage = 0;
+        let rotationCount = 0; // Для этапов вращения
+        let lastRotationAngle = 0;
+        let tapCount = 0; // Для этапа заправки капсулы
+        let capsuleFillLevel = 0; // Уровень заполнения капсулы
+        let holdAndDragProgress = 0; // Для этапа намыливания
+        let isHolding = false;
+        let foodStains = [];
+        let foamBubbles = [];
+
+        const STAGES = [
+            {
+                name: "Ополаскивание тарелки",
+                instruction: "Вращайте тарелку, чтобы смыть остатки еды!",
+                action: "rotate",
+                target: 360 * 3 // 3 полных оборота
+            },
+            {
+                name: "Заправка капсулы",
+                instruction: "Быстро нажимайте, чтобы заполнить капсулу!",
+                action: "tap",
+                target: 100 // 100% заполнения
+            },
+            {
+                name: "Намыливание",
+                instruction: "Удерживайте и водите пальцем по тарелке, чтобы появилась пена!",
+                action: "drag",
+                target: 2000 // Примерное количество "единиц" пены
+            },
+            {
+                name: "Смывание пены",
+                instruction: "Снова вращайте тарелку, чтобы смыть всю пену!",
+                action: "rotate",
+                target: 360 * 3 // 3 полных оборота
+            }
+        ];
+
+        // --- Утилиты для мультяшной графики ---
+        function createFoodStains(num = 5) {
+            dish.innerHTML = ''; // Очищаем старые пятна
+            foodStains = [];
+            for (let i = 0; i < num; i++) {
+                const stain = document.createElement('div');
+                stain.classList.add('food-stain');
+                const size = Math.random() * 30 + 20; // Размер от 20 до 50px
+                stain.style.width = `${size}px`;
+                stain.style.height = `${size}px`;
+                const posX = Math.random() * 80 + 10; // От 10% до 90%
+                const posY = Math.random() * 80 + 10;
+                stain.style.left = `${posX}%`;
+                stain.style.top = `${posY}%`;
+                dish.appendChild(stain);
+                foodStains.push(stain);
+            }
+        }
+
+        function createFoamBubbles(density = 10) {
+            dish.innerHTML = ''; // Очищаем старые пузыри
+            foamBubbles = [];
+            const dishRect = dish.getBoundingClientRect();
+            for (let i = 0; i < density; i++) {
+                const bubble = document.createElement('div');
+                bubble.classList.add('foam');
+                const size = Math.random() * 20 + 10; // Размер от 10 до 30px
+                bubble.style.width = `${size}px`;
+                bubble.style.height = `${size}px`;
+                const posX = Math.random() * 90 + 5; // От 5% до 95%
+                const posY = Math.random() * 90 + 5;
+                bubble.style.left = `${posX}%`;
+                bubble.style.top = `${posY}%`;
+                dish.appendChild(bubble);
+                foamBubbles.push(bubble);
+            }
+        }
+
+        function removeFoodStains(rotationAngle) {
+            const dishCenter = { x: dish.offsetWidth / 2, y: dish.offsetHeight / 2 };
+            foodStains = foodStains.filter(stain => {
+                const stainRect = stain.getBoundingClientRect();
+                const stainCenter = {
+                    x: stainRect.left - dish.getBoundingClientRect().left + stainRect.width / 2,
+                    y: stainRect.top - dish.getBoundingClientRect().top + stainRect.height / 2
+                };
+
+                // Проверяем, находится ли пятно в верхней части тарелки после вращения
+                // Это упрощенная логика "смывания", можно усложнить
+                const angle = Math.atan2(stainCenter.y - dishCenter.y, stainCenter.x - dishCenter.x) * 180 / Math.PI;
+                const relativeAngle = (angle - rotationAngle + 360 * 100) % 360; // Нормализуем угол
+
+                // Если пятно "попадает" в верхнюю часть при вращении
+                if (relativeAngle > 270 || relativeAngle < 90) { // Например, верхние 180 градусов
+                     if (Math.random() < 0.1) { // 10% шанс смыть при каждом check
+                        stain.remove();
+                        return false;
+                    }
+                }
+                return true;
+            });
+            if (foodStains.length === 0) {
+                nextStage();
+            }
+        }
+
+        function removeFoamBubbles(rotationAngle) {
+            // Удаляем пену аналогично пятнам, но возможно с другим порогом
+            foamBubbles = foamBubbles.filter(bubble => {
+                const bubbleRect = bubble.getBoundingClientRect();
+                const bubbleCenter = {
+                    x: bubbleRect.left - dish.getBoundingClientRect().left + bubbleRect.width / 2,
+                    y: bubbleRect.top - dish.getBoundingClientRect().top + bubbleRect.height / 2
+                };
+
+                const angle = Math.atan2(bubbleCenter.y - dish.offsetHeight / 2, bubbleCenter.x - dish.offsetWidth / 2) * 180 / Math.PI;
+                const relativeAngle = (angle - rotationAngle + 360 * 100) % 360;
+
+                if (relativeAngle > 270 || relativeAngle < 90) {
+                    if (Math.random() < 0.1) {
+                        bubble.remove();
+                        return false;
+                    }
+                }
+                return true;
+            });
+            if (foamBubbles.length === 0) {
+                nextStage();
+            }
+        }
+
+        // --- Игровой процесс ---
+
+        function startGame() {
+            gameStarted = true;
+            startTime = Date.now();
+            currentStage = 0;
+            rotationCount = 0;
+            lastRotationAngle = 0;
+            tapCount = 0;
+            capsuleFillLevel = 0;
+            holdAndDragProgress = 0;
+            isHolding = false;
+            stars.forEach(star => star.classList.remove('filled')); // Сбрасываем звезды
+
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            endScreen.classList.add('hidden');
+            capsuleContainer.classList.add('hidden'); // Скрываем по умолчанию
+
+            updateTimer();
+            gameInterval = setInterval(updateTimer, 1000);
+
+            setupStage();
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            timerDisplay.textContent = `Время: ${elapsed}с`;
+        }
+
+        function setupStage() {
+            const stage = STAGES[currentStage];
+            instructionDisplay.textContent = stage.instruction;
+
+            dish.style.transform = 'translate(-50%, -50%) rotate(0deg)'; // Сброс вращения тарелки
+
+            // Очистка предыдущих состояний
+            dish.innerHTML = '';
+            foodStains = [];
+            foamBubbles = [];
+            capsuleContainer.classList.add('hidden');
+
+            switch (stage.action) {
+                case "rotate":
+                    createFoodStains(); // Для первого этапа
+                    if (currentStage === 3) {
+                        createFoamBubbles(20); // Для последнего этапа
+                    }
+                    rotationCount = 0; // Сбрасываем для нового этапа
+                    break;
+                case "tap":
+                    capsuleContainer.classList.remove('hidden');
+                    capsuleFill.style.width = '0%';
+                    capsuleFillLevel = 0;
+                    break;
+                case "drag":
+                    holdAndDragProgress = 0;
+                    createFoamBubbles(5); // Начальная пена для намыливания
+                    break;
+            }
+        }
+
+        function nextStage() {
+            currentStage++;
+            if (currentStage < STAGES.length) {
+                setupStage();
+            } else {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            gameStarted = false;
+            clearInterval(gameInterval);
+            gameScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+
+            const finalTime = Math.floor((Date.now() - startTime) / 1000);
+            finalTimeDisplay.textContent = `Ваше время: ${finalTime} секунд`;
+
+            let earnedStars = 0;
+            if (finalTime <= 20) {
+                earnedStars = 3;
+            } else if (finalTime <= 25) {
+                earnedStars = 2;
+            } else if (finalTime <= 30) {
+                earnedStars = 1;
+            }
+
+            for (let i = 0; i < earnedStars; i++) {
+                stars[i].classList.add('filled');
+            }
+        }
+
+        // --- Обработчики событий ---
+
+        // Этап 1 и 4: Вращение тарелки
+        let isDragging = false;
+        let startAngle = 0;
+        let currentDishAngle = 0;
+
+        function getAngle(centerX, centerY, clientX, clientY) {
+            return Math.atan2(clientY - centerY, clientX - centerX) * 180 / Math.PI;
+        }
+
+        function handleRotateStart(e) {
+            e.preventDefault(); // Предотвратить скролл на мобильных
+            isDragging = true;
+            const rect = dish.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            startAngle = getAngle(centerX, centerY, clientX, clientY) - currentDishAngle;
+        }
+
+        function handleRotateMove(e) {
+            if (!isDragging || !gameStarted || (STAGES[currentStage].action !== "rotate" && STAGES[currentStage].action !== "drag")) return;
+
+            e.preventDefault();
+            const rect = dish.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const newAngle = getAngle(centerX, centerY, clientX, clientY) - startAngle;
+
+            const angleDifference = newAngle - currentDishAngle;
+            rotationCount += Math.abs(angleDifference); // Накапливаем общее вращение
+            currentDishAngle = newAngle;
+            dish.style.transform = `translate(-50%, -50%) rotate(${newAngle}deg)`;
+
+            if (STAGES[currentStage].action === "rotate") {
+                 if (currentStage === 0) { // Смывание еды
+                    removeFoodStains(newAngle);
+                 } else if (currentStage === 3) { // Смывание пены
+                    removeFoamBubbles(newAngle);
+                 }
+                if (rotationCount >= STAGES[currentStage].target) {
+                    nextStage();
+                }
+            } else if (STAGES[currentStage].action === "drag") {
+                // В этом этапе мы используем движение, а не вращение для прогресса
+                // Прогресс будет увеличиваться при движении указателя внутри тарелки
+                const dishRect = dish.getBoundingClientRect();
+                if (clientX >= dishRect.left && clientX <= dishRect.right &&
+                    clientY >= dishRect.top && clientY <= dishRect.bottom) {
+                    holdAndDragProgress += 5; // Увеличиваем прогресс
+                    if (holdAndDragProgress % 20 === 0 && foamBubbles.length < 50) { // Добавляем пену постепенно
+                        const bubble = document.createElement('div');
+                        bubble.classList.add('foam');
+                        const size = Math.random() * 20 + 10;
+                        bubble.style.width = `${size}px`;
+                        bubble.style.height = `${size}px`;
+                        const relativeX = (clientX - dishRect.left) / dishRect.width * 100;
+                        const relativeY = (clientY - dishRect.top) / dishRect.height * 100;
+                        bubble.style.left = `${relativeX}%`;
+                        bubble.style.top = `${relativeY}%`;
+                        dish.appendChild(bubble);
+                        foamBubbles.push(bubble);
+                    }
+
+                    if (holdAndDragProgress >= STAGES[currentStage].target) {
+                        nextStage();
+                    }
+                }
+            }
+        }
+
+        function handleRotateEnd() {
+            isDragging = false;
+            // Для аккселерометра на мобильных можно добавить logic here if needed
+        }
+
+        // Этап 2: Заправка капсулы
+        function handleTap() {
+            if (!gameStarted || STAGES[currentStage].action !== "tap") return;
+            capsuleFillLevel += 5; // Увеличение уровня при тапе
+            if (capsuleFillLevel > STAGES[currentStage].target) {
+                capsuleFillLevel = STAGES[currentStage].target;
+            }
+            capsuleFill.style.width = `${capsuleFillLevel}%`;
+
+            if (capsuleFillLevel >= STAGES[currentStage].target) {
+                nextStage();
+            }
+        }
+
+        // Автоматическое убывание уровня капсулы
+        let capsuleDecayInterval;
+        function startCapsuleDecay() {
+            clearInterval(capsuleDecayInterval);
+            capsuleDecayInterval = setInterval(() => {
+                if (STAGES[currentStage] && STAGES[currentStage].action === "tap") {
+                    capsuleFillLevel = Math.max(0, capsuleFillLevel - 0.8); // Медленное убывание
+                    capsuleFill.style.width = `${capsuleFillLevel}%`;
+                } else {
+                    clearInterval(capsuleDecayInterval);
+                }
+            }, 50); // Убывание каждые 50мс
+        }
+
+
+        // --- Инициализация слушателей ---
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+
+        // Для вращения (ПК и мобайл)
+        dish.addEventListener('mousedown', handleRotateStart);
+        dish.addEventListener('mousemove', handleRotateMove);
+        document.addEventListener('mouseup', handleRotateEnd); // document, чтобы отслеживать отпускание вне тарелки
+
+        dish.addEventListener('touchstart', handleRotateStart, { passive: false });
+        dish.addEventListener('touchmove', handleRotateMove, { passive: false });
+        document.addEventListener('touchend', handleRotateEnd);
+
+        // Для тапов по капсуле (для этапа 2)
+        dish.addEventListener('click', handleTap); // Можно кликать по тарелке для заполнения
+
+        // Отслеживание начала и конца decay для капсулы
+        document.addEventListener('mousedown', () => { if (STAGES[currentStage]?.action === "tap") clearInterval(capsuleDecayInterval); });
+        document.addEventListener('mouseup', () => { if (STAGES[currentStage]?.action === "tap") startCapsuleDecay(); });
+        document.addEventListener('touchstart', () => { if (STAGES[currentStage]?.action === "tap") clearInterval(capsuleDecayInterval); });
+        document.addEventListener('touchend', () => { if (STAGES[currentStage]?.action === "tap") startCapsuleDecay(); });
+
+        // Запуск decay сразу, как только игра начнется
+        document.addEventListener('DOMContentLoaded', () => {
+            // Чтобы decay запускался, когда начнется этап "tap"
+            setInterval(() => {
+                if (gameStarted && STAGES[currentStage]?.action === "tap" && !isDragging) {
+                    // isDragging check для touch/mouse, чтобы не decay'ило во время активного тапа
+                    startCapsuleDecay();
+                } else {
+                    clearInterval(capsuleDecayInterval);
+                }
+            }, 100); // Проверяем каждые 100мс, нужно ли запустить decay
+        });
+
+    </script>
+</body>
+</html>
